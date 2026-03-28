@@ -1,13 +1,15 @@
+'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task, updateTask, deleteTask } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
-  Calendar, Clock, User, Users, Zap, Brain, Trash2, CheckCircle2, RefreshCw, ArrowRight,
+  Calendar, Clock, User, Users, Zap, Brain, Trash2, CheckCircle2, RefreshCw,
+  ArrowRight, Tag, AlertTriangle, Target, Layers, Shield, BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import InitialAvatar from '@/components/InitialAvatar';
 
 interface Props {
   task: Task;
@@ -15,36 +17,75 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-import InitialAvatar from '@/components/InitialAvatar';
-
-const PRIORITY_CONFIG = {
-  high:   { emoji: '🔴', label: 'High',   cls: 'bg-red-500/10 text-red-400 border-red-500/25' },
-  medium: { emoji: '🟡', label: 'Medium', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25' },
-  low:    { emoji: '🟢', label: 'Low',    cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
+// ─── Config ───────────────────────────────────────────────────────────────────
+const PRIORITY_CFG = {
+  high:   { label: 'High',   dot: 'bg-red-400',     cls: 'bg-red-500/10 text-red-400 border-red-500/25', pulse: true },
+  medium: { label: 'Medium', dot: 'bg-amber-400',   cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25', pulse: false },
+  low:    { label: 'Low',    dot: 'bg-emerald-400', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25', pulse: false },
 };
 
-const STATUS_CONFIG = {
-  pending:      { label: 'Pending',     cls: 'bg-purple-500/10 text-purple-400 border-purple-500/25' },
-  'in-progress':{ label: 'In Progress', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/25' },
-  done:         { label: 'Done',        cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
+const STATUS_CFG = {
+  pending:       { label: 'Pending',     cls: 'bg-purple-500/10 text-purple-400 border-purple-500/25' },
+  'in-progress': { label: 'In Progress', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/25' },
+  done:          { label: 'Done',        cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
 };
 
+const RISK_CFG = {
+  low:      { label: 'Low Risk',      cls: 'text-emerald-400' },
+  medium:   { label: 'Med Risk',      cls: 'text-amber-400' },
+  high:     { label: 'High Risk',     cls: 'text-orange-400' },
+  critical: { label: 'Critical Risk', cls: 'text-red-400' },
+};
+
+const EFFORT_CFG = {
+  trivial: { label: 'Trivial', bars: 1 },
+  small:   { label: 'Small',   bars: 2 },
+  medium:  { label: 'Medium',  bars: 3 },
+  large:   { label: 'Large',   bars: 4 },
+  epic:    { label: 'Epic',    bars: 5 },
+};
+
+const ACTION_TYPE_ICONS: Record<string, string> = {
+  build: '🔨', research: '🔍', review: '👁️', design: '🎨',
+  test: '🧪', fix: '🔧', deploy: '🚀', communicate: '💬',
+  plan: '📋', hire: '👥', document: '📝', 'follow-up': '📞', other: '⚡',
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  engineering: 'text-blue-400', design: 'text-purple-400', marketing: 'text-pink-400',
+  product: 'text-cyan-400', operations: 'text-amber-400', hr: 'text-green-400',
+  finance: 'text-emerald-400', research: 'text-violet-400', qa: 'text-orange-400',
+  devops: 'text-indigo-400', leadership: 'text-yellow-400', general: 'text-slate-400',
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function TaskCard({ task, onUpdate, onDelete }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
-  const overdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date();
+  const overdue = !!(task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date());
   const meetingTitle = typeof task.meeting === 'object' ? task.meeting?.title : null;
+  const priority = PRIORITY_CFG[task.priority] ?? PRIORITY_CFG.low;
+  const status   = STATUS_CFG[task.status]   ?? STATUS_CFG.pending;
+  const riskCfg  = RISK_CFG[task.risk_level ?? 'low'];
+  const effortCfg = EFFORT_CFG[task.effort_level ?? 'small'];
+  const confidencePct = Math.round((task.confidence ?? 0.8) * 100);
+  const categoryColor = CATEGORY_COLORS[task.category ?? 'general'] || 'text-slate-400';
+  const actionIcon = ACTION_TYPE_ICONS[task.action_type ?? 'other'] || '⚡';
 
-  const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.low;
-  const status   = STATUS_CONFIG[task.status]   ?? STATUS_CONFIG.pending;
+  const daysUntil = task.deadline
+    ? Math.ceil((new Date(task.deadline).getTime() - Date.now()) / 86400000)
+    : null;
 
-  async function handleToggleStatus() {
-    const next = task.status === 'done' ? 'pending' : 'done';
+  async function handleToggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    setToggling(true);
     try {
+      const next = task.status === 'done' ? 'pending' : 'done';
       const updated = await updateTask(task._id, { status: next });
       onUpdate(updated);
-    } catch { }
+    } finally { setToggling(false); }
   }
 
   async function handleDelete(e: React.MouseEvent) {
@@ -57,163 +98,239 @@ export default function TaskCard({ task, onUpdate, onDelete }: Props) {
     } catch { setDeleting(false); }
   }
 
-  const confidencePct = Math.round((task.confidence ?? 0.8) * 100);
-
   return (
     <div
       onClick={() => router.push(`/tasks/${task._id}`)}
       className={cn(
-        'group relative flex flex-col rounded-3xl cursor-pointer',
-        'bg-gradient-to-br from-[oklch(0.15_0.02_240)] to-[oklch(0.13_0.02_240)]',
+        'group relative flex flex-col rounded-2xl cursor-pointer overflow-hidden',
+        'bg-[oklch(0.14_0.02_240)]',
         'border transition-all duration-300',
-        'hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1',
+        'hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5',
         overdue
-          ? 'border-red-500/30 shadow-red-500/5 shadow-lg'
-          : 'border-white/[0.07] hover:border-primary/25'
+          ? 'border-red-500/30 shadow-red-500/5 shadow-md'
+          : task.status === 'done'
+          ? 'border-emerald-500/20 opacity-80'
+          : 'border-white/[0.07] hover:border-primary/20'
       )}
     >
-      {/* Overdue left border accent */}
+      {/* Overdue left accent */}
       {overdue && (
-        <div className="absolute left-0 top-4 bottom-4 w-[3px] bg-red-500/70 rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+        <div className="absolute left-0 top-3 bottom-3 w-[3px] bg-red-500/70 rounded-r-full shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
       )}
 
-      {/* Hover shimmer */}
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+      {/* Top shimmer on hover */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      {/* --- Header --- */}
-      <div className="px-6 pt-6 pb-4">
-        {/* Badges row */}
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn(
-              'inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border',
-              priority.cls
-            )}>
-              {priority.emoji} {priority.label}
+      {/* ─── HEADER ─────────────────────────────────────────────────────── */}
+      <div className="px-5 pt-5 pb-4">
+        {/* Category + Action Type */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-base">{actionIcon}</span>
+            <span className={cn('text-[10px] font-bold uppercase tracking-widest', categoryColor)}>
+              {task.category || 'general'}
             </span>
-            <span className={cn(
-              'inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border',
-              status.cls
-            )}>
-              {status.label}
-            </span>
-            {overdue && (
-              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/25">
-                ⚠ Overdue
-              </span>
-            )}
           </div>
+          <div className="flex items-center gap-1.5">
+            {/* Delete */}
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
 
-          {/* Delete btn */}
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 flex-shrink-0"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+        {/* Priority + Status badges */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border', priority.cls)}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', priority.dot, priority.pulse && 'animate-pulse')} />
+            {priority.label}
+          </span>
+          <span className={cn('inline-flex items-center text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border', status.cls)}>
+            {status.label}
+          </span>
+          {overdue && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-red-500/10 text-red-400 border-red-500/25 animate-pulse">
+              <AlertTriangle className="h-2.5 w-2.5" />
+              Overdue
+            </span>
+          )}
         </div>
 
         {/* Task description */}
-        <p className="text-[13px] font-semibold leading-relaxed text-foreground/90 group-hover:text-foreground transition-colors line-clamp-2">
+        <p className="text-[13px] font-semibold leading-relaxed text-white/85 group-hover:text-white transition-colors line-clamp-2">
           {task.description}
         </p>
+
+        {/* Context snippet */}
+        {task.context && (
+          <p className="text-[11px] leading-relaxed text-white/35 mt-1.5 line-clamp-1 italic">
+            {task.context}
+          </p>
+        )}
       </div>
 
-      {/* --- Body --- */}
-      <div className="px-6 pb-6 flex flex-col gap-4 flex-1">
-        {/* Thin divider */}
-        <div className="h-px bg-white/[0.06]" />
+      {/* ─── DIVIDER ─────────────────────────────────────────────────────── */}
+      <div className="h-px bg-white/[0.05] mx-5" />
 
-        {/* People */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-6 w-6 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
-              <User className="h-3 w-3 text-muted-foreground/60" />
-            </div>
+      {/* ─── BODY ───────────────────────────────────────────────────────── */}
+      <div className="px-5 pb-5 flex flex-col gap-3 flex-1 mt-3">
+
+        {/* People Row */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 min-w-0">
             <InitialAvatar name={task.owner || '?'} size="sm" />
-            <span className="text-[11px] font-medium text-muted-foreground/80 truncate">{task.owner || 'Unassigned'}</span>
+            <span className="text-[11px] font-medium text-white/55 truncate">{task.owner || 'Unassigned'}</span>
           </div>
           {task.member && task.member !== task.owner && (
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="h-6 w-6 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
-                <Users className="h-3 w-3 text-muted-foreground/60" />
+            <>
+              <div className="h-3 w-px bg-white/10" />
+              <div className="flex items-center gap-1.5 min-w-0">
+                <InitialAvatar name={task.member} size="sm" />
+                <span className="text-[11px] font-medium text-white/55 truncate">{task.member}</span>
               </div>
-              <InitialAvatar name={task.member} size="sm" />
-              <span className="text-[11px] font-medium text-muted-foreground/80 truncate">{task.member}</span>
-            </div>
+            </>
           )}
         </div>
 
-        {/* Meta chips */}
-        <div className="flex flex-wrap gap-2">
-          {task.deadline && (
-            <div className={cn(
-              'flex items-center gap-2 px-3 py-1.5 rounded-[14px] text-[10px] font-bold border',
-              overdue
-                ? 'bg-red-500/10 border-red-500/25 text-red-400'
-                : 'bg-white/[0.04] border-white/[0.08] text-muted-foreground/70'
-            )}>
-              <Calendar className="h-3 w-3" />
-              {new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </div>
-          )}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-[14px] text-[10px] font-bold border bg-white/[0.04] border-white/[0.08] text-muted-foreground/70">
-            <Clock className="h-3 w-3" />
-            {task.estimated_duration_hours}h
+        {/* Metrics row */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Deadline */}
+          <div className={cn('flex flex-col gap-0.5 px-2.5 py-2 rounded-xl border', overdue ? 'bg-red-500/[0.08] border-red-500/20' : 'bg-white/[0.03] border-white/[0.06]')}>
+            <span className="text-[8px] font-black uppercase tracking-wider text-white/20">Deadline</span>
+            {task.deadline ? (
+              <span className={cn('text-[10px] font-bold', overdue ? 'text-red-400' : 'text-white/60')}>
+                {daysUntil !== null && task.status !== 'done'
+                  ? daysUntil < 0 ? `${Math.abs(daysUntil)}d ago`
+                  : daysUntil === 0 ? 'Today'
+                  : `${daysUntil}d left`
+                  : new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                }
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium text-white/25">Not set</span>
+            )}
           </div>
-          {meetingTitle && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-[14px] text-[10px] font-bold border bg-primary/[0.08] border-primary/20 text-primary/70">
-              <Brain className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{meetingTitle}</span>
-            </div>
-          )}
-        </div>
 
-        {/* Confidence bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/50">
-              <Zap className="h-3 w-3" />
-              Confidence
-            </div>
-            <span className="text-[10px] font-black text-primary">{confidencePct}%</span>
+          {/* Duration */}
+          <div className="flex flex-col gap-0.5 px-2.5 py-2 rounded-xl border bg-white/[0.03] border-white/[0.06]">
+            <span className="text-[8px] font-black uppercase tracking-wider text-white/20">Est.</span>
+            <span className="text-[10px] font-bold text-white/60">{task.estimated_duration_hours}h</span>
           </div>
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-blue-400 shadow-sm"
-              style={{ width: `${confidencePct}%`, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)' }}
-            />
+
+          {/* Risk */}
+          <div className={cn('flex flex-col gap-0.5 px-2.5 py-2 rounded-xl border bg-white/[0.03] border-white/[0.06]')}>
+            <span className="text-[8px] font-black uppercase tracking-wider text-white/20">Risk</span>
+            <span className={cn('text-[10px] font-bold', riskCfg.cls)}>{riskCfg.label.split(' ')[0]}</span>
           </div>
         </div>
 
-        {/* AI Agent note */}
+        {/* Effort bars + Confidence */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Effort level bars */}
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-black uppercase tracking-wider text-white/20 mr-1">Effort</span>
+            {[1,2,3,4,5].map(n => (
+              <div
+                key={n}
+                className={cn(
+                  'h-2.5 w-1.5 rounded-sm transition-all',
+                  n <= effortCfg.bars
+                    ? task.priority === 'high' ? 'bg-red-400' : task.priority === 'medium' ? 'bg-amber-400' : 'bg-emerald-400'
+                    : 'bg-white/[0.08]'
+                )}
+              />
+            ))}
+            <span className="text-[9px] text-white/30 ml-1">{effortCfg.label}</span>
+          </div>
+
+          {/* Confidence mini */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[8px] font-black uppercase tracking-wider text-white/20">AI</span>
+            <div className="h-1.5 w-14 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className={cn('h-full rounded-full', confidencePct >= 80 ? 'bg-emerald-400' : confidencePct >= 60 ? 'bg-blue-400' : 'bg-amber-400')}
+                style={{ width: `${confidencePct}%` }}
+              />
+            </div>
+            <span className={cn('text-[9px] font-bold', confidencePct >= 80 ? 'text-emerald-400' : confidencePct >= 60 ? 'text-blue-400' : 'text-amber-400')}>
+              {confidencePct}%
+            </span>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {task.tags.slice(0, 4).map(tag => (
+              <span key={tag} className="inline-flex items-center gap-0.5 text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-white/40">
+                <Tag className="h-2 w-2" />
+                {tag}
+              </span>
+            ))}
+            {task.tags.length > 4 && (
+              <span className="text-[9px] text-white/25 font-medium">+{task.tags.length - 4}</span>
+            )}
+          </div>
+        )}
+
+        {/* Success criteria snippet */}
+        {task.success_criteria && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/[0.1]">
+            <Target className="h-3 w-3 text-emerald-400/60 mt-0.5 shrink-0" />
+            <p className="text-[10px] leading-relaxed text-white/50 line-clamp-1">{task.success_criteria}</p>
+          </div>
+        )}
+
+        {/* Blockers indicator */}
+        {task.blockers && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-orange-500/[0.05] border border-orange-500/[0.12]">
+            <Shield className="h-3 w-3 text-orange-400/70 mt-0.5 shrink-0" />
+            <p className="text-[10px] leading-relaxed text-orange-300/60 line-clamp-1">{task.blockers}</p>
+          </div>
+        )}
+
+        {/* Agent note */}
         {task.agentMessages && task.agentMessages.length > 0 && (
-          <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-primary/[0.06] border border-primary/15">
-            <Brain className="h-3.5 w-3.5 text-primary/60 flex-shrink-0 mt-px" />
-            <p className="text-[10px] leading-relaxed text-foreground/70 italic line-clamp-2">
+          <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-primary/[0.05] border border-primary/10">
+            <Brain className="h-3 w-3 text-primary/60 mt-0.5 shrink-0" />
+            <p className="text-[10px] leading-relaxed text-white/50 italic line-clamp-1">
               &ldquo;{task.agentMessages[task.agentMessages.length - 1].message}&rdquo;
             </p>
           </div>
         )}
 
-        {/* Footer actions */}
+        {/* Meeting source */}
+        {meetingTitle && (
+          <div className="flex items-center gap-1.5 text-[9px] font-medium text-white/25">
+            <BookOpen className="h-2.5 w-2.5" />
+            <span className="truncate">{meetingTitle}</span>
+          </div>
+        )}
+
+        {/* ─── FOOTER ────────────────────────────────────────────────── */}
         <div className="flex gap-2 pt-1 mt-auto" onClick={e => e.stopPropagation()}>
           <Button
             variant={task.status === 'done' ? 'outline' : 'default'}
             size="sm"
-            onClick={handleToggleStatus}
-            className="flex-1 gap-1.5 text-[11px] font-bold uppercase tracking-wider h-9 rounded-xl"
+            onClick={handleToggle}
+            disabled={toggling}
+            className="flex-1 gap-1.5 text-[11px] font-bold uppercase tracking-wider h-8 rounded-xl"
           >
-            {task.status === 'done'
+            {toggling
+              ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              : task.status === 'done'
               ? <><RefreshCw className="h-3.5 w-3.5" /> Reopen</>
               : <><CheckCircle2 className="h-3.5 w-3.5" /> Complete</>}
           </Button>
           <button
-            onClick={(e) => { e.stopPropagation(); router.push(`/tasks/${task._id}`); }}
-            className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 text-muted-foreground/60 hover:text-foreground flex-shrink-0"
+            onClick={() => router.push(`/tasks/${task._id}`)}
+            className="h-8 w-8 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.07] hover:border-white/[0.14] transition-all text-white/40 hover:text-white"
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

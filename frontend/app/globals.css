@@ -635,6 +635,7 @@ select {
 }
 
 @keyframes pulse-glow {
+
   0%,
   100% {
     box-shadow: 0 0 8px var(--accent-glow);
@@ -672,27 +673,27 @@ select {
 }
 
 /* Staggered children */
-.stagger > *:nth-child(1) {
+.stagger>*:nth-child(1) {
   animation-delay: 0.05s;
 }
 
-.stagger > *:nth-child(2) {
+.stagger>*:nth-child(2) {
   animation-delay: 0.10s;
 }
 
-.stagger > *:nth-child(3) {
+.stagger>*:nth-child(3) {
   animation-delay: 0.15s;
 }
 
-.stagger > *:nth-child(4) {
+.stagger>*:nth-child(4) {
   animation-delay: 0.20s;
 }
 
-.stagger > *:nth-child(5) {
+.stagger>*:nth-child(5) {
   animation-delay: 0.25s;
 }
 
-.stagger > *:nth-child(6) {
+.stagger>*:nth-child(6) {
   animation-delay: 0.30s;
 }
 

@@ -76,10 +76,9 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="fade-in content-container py-4 md:py-6">
+    <div className="flex flex-col gap-12 fade-in content-container py-4 md:py-6 space-y-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
-        <div>
+<div className="flex flex-col md:flex-row md:items-end justify-between gap-6">        <div>
           <h1 className="page-title glow-text">Task Dashboard</h1>
           <p className="page-subtitle">AI-driven meeting intelligence &amp; action tracking</p>
         </div>
@@ -96,7 +95,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-7 mb-12 md:mb-16">
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-7">
         {statCards.map(s => (
           <Card key={s.label} className="group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/5 bg-card/30 backdrop-blur-xl border border-white/5 rounded-2xl">
             <div className="absolute top-0 right-0 w-20 h-20 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
@@ -119,7 +118,7 @@ export default function DashboardPage() {
 
       {/* Progress bar */}
       {stats.total > 0 && (
-        <Card className="mb-12 md:mb-16 bg-card/20 backdrop-blur-sm border-white/5 overflow-hidden group shadow-2xl shadow-primary/5">
+        <Card className=" mb-12 md:mb-16 bg-card/20 backdrop-blur-sm border-white/5 overflow-hidden group shadow-2xl shadow-primary/5">
           <CardContent className="p-8 flex flex-col sm:flex-row items-center gap-10">
             <div className="flex-1 w-full space-y-3">
               <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
@@ -130,10 +129,10 @@ export default function DashboardPage() {
                 <span className="font-black text-primary text-sm">{completionPct}%</span>
               </div>
               <div className="relative">
-                 <Progress value={completionPct} className="h-2 rounded-full bg-white/5" />
-                 <div className="absolute top-0 left-0 h-full w-full pointer-events-none overflow-hidden rounded-full">
-                    <div className="h-full w-20 bg-white/10 blur-md -skew-x-12 animate-shimmer" />
-                 </div>
+                <Progress value={completionPct} className="h-2 rounded-full bg-white/5" />
+                <div className="absolute top-0 left-0 h-full w-full pointer-events-none overflow-hidden rounded-full">
+                  <div className="h-full w-20 bg-white/10 blur-md -skew-x-12 animate-shimmer" />
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">

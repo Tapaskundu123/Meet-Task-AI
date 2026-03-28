@@ -42,7 +42,12 @@ router.get('/:id', async (req, res) => {
 
 // PATCH /api/tasks/:id - Update task fields
 router.patch('/:id', async (req, res) => {
-  const allowed = ['description', 'owner', 'member', 'deadline', 'priority', 'status', 'estimated_duration_hours'];
+  const allowed = [
+    'description', 'owner', 'member', 'deadline', 'priority', 'status',
+    'estimated_duration_hours', 'context', 'category', 'tags', 'success_criteria',
+    'blockers', 'risk_level', 'effort_level', 'stakeholders', 'source_quote',
+    'action_type', 'dependencies', 'notes',
+  ];
   const updates = {};
   for (const field of allowed) {
     if (req.body[field] !== undefined) {

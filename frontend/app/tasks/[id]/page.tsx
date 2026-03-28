@@ -137,7 +137,7 @@ export default function TaskDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'intelligence' | 'activity'>('details');
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -382,10 +382,10 @@ export default function TaskDetailPage() {
 
           {/* ── TABS ─────────────────────────────────────────────────────── */}
           <div className="flex items-center gap-1 p-1 bg-white/[0.03] rounded-2xl border border-white/[0.06] w-fit">
-            {(['details', 'activity'] as const).map(tab => (
+            {(['details', 'intelligence', 'activity'] as const).map(tab => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab as 'details' | 'activity')}
                 className={cn(
                   'h-9 px-5 rounded-xl text-[12px] font-bold uppercase tracking-wider transition-all',
                   activeTab === tab
@@ -521,6 +521,28 @@ export default function TaskDetailPage() {
                 </div>
               </div>
 
+              {/* ── Context ─────────────────────────────────────────────── */}
+              {task.context && (
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-2">Context & Background</p>
+                  <p className="text-[13px] leading-relaxed text-white/65">{task.context}</p>
+                </div>
+              )}
+
+              {/* ── Tags ─────────────────────────────────────────────────── */}
+              {task.tags && task.tags.length > 0 && (
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-3">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {task.tags.map(tag => (
+                      <span key={tag} className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.09] text-white/55 hover:text-white/80 hover:border-white/20 transition-all">
+                        # {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Source meeting */}
               {meetingTitle && (
                 <div
@@ -541,6 +563,127 @@ export default function TaskDetailPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── INTELLIGENCE TAB ─────────────────────────────────────────── */}
+          {activeTab === 'intelligence' && (
+            <div className="space-y-5">
+
+              {/* Success Criteria */}
+              {task.success_criteria ? (
+                <div className="p-5 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.04]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-6 w-6 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400/50">Success Criteria</p>
+                  </div>
+                  <p className="text-[13px] leading-relaxed text-white/70">{task.success_criteria}</p>
+                </div>
+              ) : (
+                <div className="p-5 rounded-2xl border border-dashed border-white/[0.07]">
+                  <p className="text-[11px] text-white/25 text-center">No success criteria defined — consider adding a clear definition of done.</p>
+                </div>
+              )}
+
+              {/* Blockers */}
+              {task.blockers && (
+                <div className="p-5 rounded-2xl border border-orange-500/20 bg-orange-500/[0.04]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-6 w-6 rounded-lg bg-orange-500/15 flex items-center justify-center">
+                      <Shield className="h-3.5 w-3.5 text-orange-400" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400/50">Blockers & Dependencies</p>
+                  </div>
+                  <p className="text-[13px] leading-relaxed text-white/65">{task.blockers}</p>
+                </div>
+              )}
+
+              {/* Stakeholders */}
+              {task.stakeholders && task.stakeholders.length > 0 && (
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-3">Stakeholders</p>
+                  <div className="flex flex-wrap gap-3">
+                    {task.stakeholders.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                        <InitialAvatar name={s} size="sm" />
+                        <span className="text-[12px] font-semibold text-white/65">{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Source Quote */}
+              {task.source_quote && (
+                <div className="p-5 rounded-2xl border border-blue-500/15 bg-blue-500/[0.03]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-6 w-6 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Verbatim from Transcript</p>
+                  </div>
+                  <p className="text-[13px] leading-relaxed text-white/60 italic">&ldquo;{task.source_quote}&rdquo;</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {task.notes && (
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-2">AI Notes</p>
+                  <p className="text-[13px] leading-relaxed text-white/55">{task.notes}</p>
+                </div>
+              )}
+
+              {/* Effort + Risk summary */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-3">Effort Level</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5].map(n => {
+                        const bars = { trivial:1, small:2, medium:3, large:4, epic:5 };
+                        const fl = (task.effort_level ?? 'small') as keyof typeof bars;
+                        return (
+                          <div key={n} className={cn('h-3 w-2 rounded-sm', n <= (bars[fl] ?? 2) ? 'bg-primary' : 'bg-white/[0.08]')} />
+                        );
+                      })}
+                    </div>
+                    <span className="text-[12px] font-bold text-white/60 capitalize">{task.effort_level ?? 'Small'}</span>
+                  </div>
+                </div>
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-3">Risk Level</p>
+                  <div className="flex items-center gap-2">
+                    <div className={cn('h-2.5 w-2.5 rounded-full', {
+                      'bg-emerald-400': task.risk_level === 'low',
+                      'bg-amber-400': task.risk_level === 'medium',
+                      'bg-orange-400 animate-pulse': task.risk_level === 'high',
+                      'bg-red-400 animate-pulse': task.risk_level === 'critical',
+                    } as Record<string, boolean>)} />
+                    <span className={cn('text-[12px] font-bold capitalize', {
+                      'text-emerald-400': task.risk_level === 'low',
+                      'text-amber-400': task.risk_level === 'medium',
+                      'text-orange-400': task.risk_level === 'high',
+                      'text-red-400': task.risk_level === 'critical',
+                    } as Record<string, boolean>)}>{task.risk_level ?? 'Low'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action type + Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-2">Action Type</p>
+                  <p className="text-[13px] font-semibold text-white/65 capitalize">{task.action_type ?? 'other'}</p>
+                </div>
+                <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25 mb-2">Category</p>
+                  <p className="text-[13px] font-semibold text-white/65 capitalize">{task.category ?? 'general'}</p>
+                </div>
+              </div>
+
             </div>
           )}
 

@@ -91,6 +91,20 @@ export interface Task {
   agentMessages: AgentMessage[];
   meeting?: { _id: string; title: string; created_at: string } | string;
   created_at: string;
+
+  // Enriched LLM fields
+  context?: string | null;
+  category?: string;
+  tags?: string[];
+  success_criteria?: string | null;
+  blockers?: string | null;
+  risk_level?: 'low' | 'medium' | 'high' | 'critical';
+  effort_level?: 'trivial' | 'small' | 'medium' | 'large' | 'epic';
+  stakeholders?: string[];
+  source_quote?: string | null;
+  action_type?: string;
+  dependencies?: string[];
+  notes?: string | null;
 }
 
 export interface Meeting {
