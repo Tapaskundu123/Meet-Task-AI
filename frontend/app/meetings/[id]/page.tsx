@@ -3,7 +3,6 @@
 import { useEffect, useState, use } from 'react';
 import { getMeeting, updateTask, deleteTask, Meeting, Task } from '@/lib/api';
 import TaskCard from '@/components/TaskCard';
-import TaskDetailSheet from '@/components/TaskDetailSheet';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,10 @@ import {
 
 export default function MeetingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showTranscript, setShowTranscript] = useState(false);
 
   useEffect(() => {
     getMeeting(id)
@@ -33,7 +35,6 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
         ...m,
         tasks: (m.tasks as Task[]).map(t => t._id === res._id ? res : t),
       } : m);
-      if (selectedTask?._id === res._id) setSelectedTask(res);
     } catch (e) {
       console.error(e);
     }
@@ -47,7 +48,6 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
         ...m,
         tasks: (m.tasks as Task[]).filter(t => t._id !== taskId),
       } : m);
-      if (selectedTask?._id === taskId) setSelectedTask(null);
     } catch (e) {
       console.error(e);
     }
@@ -78,7 +78,7 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
   const progress = tasks.length > 0 ? (done / tasks.length) * 100 : 0;
 
   return (
-    <div className="fade-in max-w-6xl mx-auto pb-12 space-y-8">
+    <div className="fade-in content-container pb-24 md:pb-32 space-y-12 md:space-y-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start gap-6">
         <Link href="/meetings">
@@ -143,7 +143,6 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
                       task={task}
                       onUpdate={handleUpdate}
                       onDelete={handleDelete}
-                      onViewDetails={setSelectedTask}
                     />
                   </div>
                 ))}
@@ -229,14 +228,7 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {selectedTask && (
-        <TaskDetailSheet
-          task={selectedTask}
-          onClose={() => setSelectedTask(null)}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-        />
-      )}
+
     </div>
   );
 }

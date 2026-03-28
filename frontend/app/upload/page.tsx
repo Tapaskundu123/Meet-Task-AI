@@ -10,7 +10,7 @@ import { Progress as ProgressBar } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  Upload, FileText, CheckCircle2, AlertCircle, Sparkles, 
+  Upload, FileText, AlertCircle, Sparkles, 
   ChevronLeft, ArrowRight, Brain, Zap, RefreshCw, AudioLines
 } from 'lucide-react';
 
@@ -79,8 +79,8 @@ We need to update the documentation - this is high priority and should be done A
   }
 
   return (
-    <div className="fade-in max-w-5xl mx-auto pb-10">
-      <div className="mb-10 text-center">
+    <div className="fade-in content-container max-w-5xl pb-24 md:pb-32">
+      <div className="mb-16 md:mb-24 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-3 glow-text">
           New Meeting Intelligence
         </h1>
@@ -98,7 +98,7 @@ We need to update the documentation - this is high priority and should be done A
                 ✅
               </div>
               <div className="flex-1">
-                <CardTitle className="text-3xl font-black text-green-400 mb-1">Extraction Complete</CardTitle>
+                <CardTitle className="text-3xl font-black text-green-400 mb-1">Analysis complete</CardTitle>
                 <CardDescription className="text-green-300 font-bold uppercase tracking-wider text-xs">
                   Detected {result.meeting.taskCount} distinct action items
                 </CardDescription>
@@ -125,7 +125,7 @@ We need to update the documentation - this is high priority and should be done A
                   {result.tasks.map((t, idx) => (
                     <Card key={idx} className="group p-5 bg-card/40 border-border/40 hover:border-primary/40 hover:bg-card transition-all duration-300">
                       <div className="flex items-start gap-4">
-                        <div className={`w-1.5 h-10 rounded-full flex-shrink-0 ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
+                        <div className={`w-1.5 h-10 rounded-full shrink-0 ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-sm leading-snug group-hover:text-primary transition-colors mb-2 line-clamp-2">{t.description}</p>
                           <div className="flex flex-wrap items-center gap-3">
@@ -152,15 +152,15 @@ We need to update the documentation - this is high priority and should be done A
               </Button>
             </Link>
             <Button variant="outline" size="lg" className="w-full sm:w-auto px-10 gap-2" onClick={reset}>
-               Process Another Job <ArrowRight className="h-4 w-4" />
+               Process another meeting <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       ) : (
         /* ---- Input State ---- */
-        <div className="stagger max-w-4xl mx-auto">
+        <div className="stagger max-w-4xl mx-auto pb-12">
           <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="w-full">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
               <TabsList className="bg-card/40 backdrop-blur-md border border-border/40 p-1 h-12">
                 <TabsTrigger value="text" className="h-full px-8 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <FileText className="h-4 w-4" /> Manual Entry
@@ -231,7 +231,7 @@ We need to update the documentation - this is high priority and should be done A
                             <Upload className="h-10 w-10 text-primary opacity-60 group-hover:opacity-100 transition-opacity" />
                           </div>
                           <div>
-                            <h3 className="text-2xl font-black mb-2">Drag & Drop Audio</h3>
+                            <h3 className="text-2xl font-black mb-2">Drag and drop audio</h3>
                             <p className="text-muted-foreground font-medium mb-3">Professional transcription for MP3, WAV, and M4A</p>
                             <div className="flex items-center justify-center gap-2">
                                <Badge variant="secondary" className="bg-white/5 border-none font-bold text-[10px] tracking-widest text-muted-foreground/60 uppercase">Max 500MB</Badge>
@@ -245,7 +245,7 @@ We need to update the documentation - this is high priority and should be done A
                     </div>
                     
                     <div className="bg-primary/5 border border-primary/10 p-5 rounded-xl flex items-start gap-4">
-                      <div className="h-10 w-10 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="h-10 w-10 bg-primary/20 rounded-lg flex items-center justify-center shrink-0">
                          <Brain className="h-5 w-5 text-primary" />
                       </div>
                       <div>

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { getTasks, Task } from '@/lib/api';
 import TaskCard from '@/components/TaskCard';
 import FilterBar from '@/components/FilterBar';
-import TaskDetailSheet from '@/components/TaskDetailSheet';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -27,8 +28,6 @@ export default function DashboardPage() {
   const [priority, setPriority] = useState('');
   const [owner, setOwner] = useState('');
   const [member, setMember] = useState('');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -46,19 +45,14 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-  function handleViewDetails(task: Task) {
-    setSelectedTask(task);
-    setSheetOpen(true);
-  }
+
 
   function handleUpdate(updated: Task) {
     setTasks(ts => ts.map(t => t._id === updated._id ? updated : t));
-    if (selectedTask?._id === updated._id) setSelectedTask(updated);
   }
 
   function handleDelete(id: string) {
     setTasks(ts => ts.filter(t => t._id !== id));
-    if (selectedTask?._id === id) { setSheetOpen(false); setSelectedTask(null); }
   }
 
   const stats = {
@@ -82,9 +76,9 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="fade-in max-w-[1600px] mx-auto px-4 sm:px-8 py-6">
+    <div className="fade-in content-container py-4 md:py-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
         <div>
           <h1 className="page-title glow-text">Task Dashboard</h1>
           <p className="page-subtitle">AI-driven meeting intelligence &amp; action tracking</p>
@@ -102,13 +96,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-16">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-7 mb-12 md:mb-16">
         {statCards.map(s => (
-          <Card key={s.label} className="group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/5 bg-card/30 backdrop-blur-xl border border-white/5">
-            <div className="absolute top-0 right-0 w-16 h-16 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
+          <Card key={s.label} className="group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/5 bg-card/30 backdrop-blur-xl border border-white/5 rounded-2xl">
+            <div className="absolute top-0 right-0 w-20 h-20 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
               <s.icon className="w-full h-full -rotate-12 translate-x-4 -translate-y-4" />
             </div>
-            <CardContent className="p-6">
+            <CardContent className="p-7">
               <div className="flex justify-between items-start mb-4">
                 <div className={`h-10 w-10 rounded-xl ${s.bg} flex items-center justify-center border border-white/5 shadow-inner`}>
                   <s.icon className={`h-5 w-5 ${s.color}`} />
@@ -125,8 +119,8 @@ export default function DashboardPage() {
 
       {/* Progress bar */}
       {stats.total > 0 && (
-        <Card className="mb-16 bg-card/20 backdrop-blur-sm border-white/5 overflow-hidden group">
-          <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-8">
+        <Card className="mb-12 md:mb-16 bg-card/20 backdrop-blur-sm border-white/5 overflow-hidden group shadow-2xl shadow-primary/5">
+          <CardContent className="p-8 flex flex-col sm:flex-row items-center gap-10">
             <div className="flex-1 w-full space-y-3">
               <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
                 <span className="flex items-center gap-2">
@@ -156,8 +150,8 @@ export default function DashboardPage() {
       )}
 
       {/* Filter Bar */}
-      <Card className="mb-16 bg-card/10 border-white/5 shadow-2xl">
-        <CardContent className="p-4">
+      <Card className="mb-12 md:mb-16 bg-card/10 border-white/5 shadow-xl glass">
+        <CardContent className="p-7">
           <FilterBar
             status={status} priority={priority} owner={owner} member={member}
             onStatusChange={setStatus} onPriorityChange={setPriority}
@@ -224,15 +218,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Grid View */}
-          <TabsContent value="grid" className="mt-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-10 stagger">
+          <TabsContent value="grid" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 stagger">
               {tasks.map(task => (
                 <div key={task._id} className="fade-in">
                   <TaskCard
                     task={task}
                     onUpdate={handleUpdate}
                     onDelete={handleDelete}
-                    onViewDetails={handleViewDetails}
                   />
                 </div>
               ))}
@@ -263,11 +256,11 @@ export default function DashboardPage() {
                         <TableRow
                           key={task._id}
                           className="cursor-pointer hover:bg-muted/40"
-                          onClick={() => handleViewDetails(task)}
+                          onClick={() => router.push(`/tasks/${task._id}`)}
                         >
                           <TableCell>
                             <div className="flex items-start gap-2">
-                              {overdue && <Clock className="h-3.5 w-3.5 text-destructive mt-0.5 flex-shrink-0" />}
+                              {overdue && <Clock className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />}
                               <span className="text-sm font-medium line-clamp-2">{task.description}</span>
                             </div>
                           </TableCell>
@@ -293,7 +286,7 @@ export default function DashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleViewDetails(task)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => router.push(`/tasks/${task._id}`)}>
                               <RefreshCw className="h-3.5 w-3.5" />
                             </Button>
                           </TableCell>
@@ -308,14 +301,7 @@ export default function DashboardPage() {
         </Tabs>
       )}
 
-      {/* Detail Sheet */}
-      <TaskDetailSheet
-        task={selectedTask}
-        open={sheetOpen}
-        onClose={() => { setSheetOpen(false); setSelectedTask(null); }}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-      />
+
     </div>
   );
 }

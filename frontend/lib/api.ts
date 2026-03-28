@@ -52,6 +52,10 @@ export async function getTasks(filters: TaskFilters = {}) {
   return apiFetch<{ tasks: Task[]; total: number }>(`/tasks${qs ? `?${qs}` : ''}`);
 }
 
+export async function getTask(id: string) {
+  return apiFetch<Task>(`/tasks/${id}`);
+}
+
 export async function updateTask(id: string, updates: Partial<Task>) {
   return apiFetch<Task>(`/tasks/${id}`, {
     method: 'PATCH',
